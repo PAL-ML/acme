@@ -180,3 +180,33 @@ class GymAtariAdapter(GymWrapper):
 
   def action_spec(self) -> List[specs.BoundedArray]:
     return [self._action_spec]  # pytype: disable=bad-return-type
+
+class GymAtariRAMAdapter(GymWrapper):
+  """Specialized wrapper exposing a Gym Atari environment.
+  This wraps the Gym Atari environment in the same way as GymWrapper, but
+  exposes atari ram states. The resulting observations are 128 byte arrays.
+  """
+
+  def reset(self) -> dm_env.TimeStep:
+    """Resets the episode."""
+    self._reset_next_step = False
+    observation = self._environment.reset()
+    return dm_env.restart(observation)
+
+  def step(self, action: List[np.ndarray]) -> dm_env.TimeStep:
+    """Steps the environment."""
+    if self._reset_next_step:
+      return self.reset()
+
+    observation, reward, done, info = self._environment.step(action[0].item())
+    self._reset_next_step = done
+
+    if done:
+      return dm_env.termination(reward, observation)
+    return dm_env.transition(reward, observation)
+
+  def observation_spec(self) -> List[specs.BoundedArray]:
+    return [self._observation_spec]
+
+  def action_spec(self) -> List[specs.BoundedArray]:
+    return [self._action_spec]  # pytype: disable=bad-return-type
