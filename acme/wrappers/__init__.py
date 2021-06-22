@@ -16,12 +16,12 @@
 
 from acme.wrappers.action_repeat import ActionRepeatWrapper
 from acme.wrappers.atari_wrapper import AtariWrapper
-from acme_pal.wrappers.atari_ram_wrapper import AtariRAMWrapper # Hack to resolve path issue when run in colab
+from acme_pal.acme.wrappers.atari_ram_wrapper import AtariRAMWrapper # Hack to resolve path issue when run in colab
 from acme.wrappers.base import EnvironmentWrapper
 from acme.wrappers.base import wrap_all
 from acme.wrappers.canonical_spec import CanonicalSpecWrapper
 from acme.wrappers.frame_stacking import FrameStackingWrapper
-from acme_pal.wrappers.gym_wrapper import GymAtariRAMAdapter # Hack to resolve path issue when run in colab
+from acme_pal.acme.wrappers.gym_wrapper import GymAtariRAMAdapter # Hack to resolve path issue when run in colab
 from acme.wrappers.gym_wrapper import GymAtariAdapter
 from acme.wrappers.gym_wrapper import GymWrapper
 from acme.wrappers.observation_action_reward import ObservationActionRewardWrapper
