@@ -26,20 +26,17 @@ python -m venv acme_testing
 source acme_testing/bin/activate
 
 # Install dependencies.
-pip install --upgrade pip setuptools absl-py
-pip --version
+pip install --upgrade pip setuptools wheel
+pip install -r requirements.txt
 pip install .
-pip install .[jax]
-pip install .[tf]
-pip install .[reverb]
-pip install .[envs]
-pip install .[testing]
-pip install .[launchpad]
 
 N_CPU=$(grep -c ^processor /proc/cpuinfo)
+EXAMPLES=$(find examples/ -mindepth 1 -type d -not -path examples/offline -not -path examples/open_spiel)
 
 # Run static type-checking.
-pytype -k -j "${N_CPU}" `find . -maxdepth 1 -mindepth 1 -type d` -x 'examples/open_spiel examples/offline acme_testing'
+for TESTDIR in acme ${EXAMPLES}; do
+  pytype -k -j "${N_CPU}" "${TESTDIR}"
+done
 
 # Run all tests.
 pytest --ignore-glob="*/agent_test.py" --ignore-glob="*/agent_distributed_test.py" --durations=10 -n "${N_CPU}" acme
