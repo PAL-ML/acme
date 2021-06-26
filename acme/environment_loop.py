@@ -161,10 +161,11 @@ class EnvironmentLoop(core.Worker):
       step_count += result['episode_length']
       # Log the given results.
       episode_return_list.append(result['episode_return'])
-      result["type"] =  type(result['episode_return'])
       self._logger.write(result)
-    
-    self._logger.write({"episode_return_list":episode_return_list})
+    np_episode_return_list = np.array(episode_return_list)
+    avg = np.mean(np_episode_return_list)
+    median = np.median(np_episode_return_list)
+    self._logger.write({"avg":avg,"median":median})
 
 
 def _generate_zeros_from_spec(spec: specs.Array) -> np.ndarray:
