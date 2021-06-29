@@ -5,7 +5,7 @@
    Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1ooz4fdRg60PGpZ8rJIZEhHsAWI9Hbtwu?usp=sharing)
 
 2. Atari Breakout OpenAI gym with DQN agent - Images as observation [![Open In
-   Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1Y9KcDjBYZqnCVyXLi79qcYZjk3CJqjKS?usp=sharing)
+   Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1c0rRjYo-cQfsNafGSZk-tfzGe7-9Afeh?usp=sharing)
 
 3. Atari Breakout OpenAI gym with DQN agent - Ram states as observation [![Open In
    Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1eIQeL-P45tORLuybxGJqEURvQnxML_Xr?usp=sharing)
