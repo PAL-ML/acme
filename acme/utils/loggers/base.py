@@ -1,4 +1,3 @@
-# python3
 # Copyright 2018 DeepMind Technologies Limited. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,7 +19,6 @@ from typing import Any, Mapping
 
 import numpy as np
 import tree
-
 
 LoggingData = Mapping[str, Any]
 
@@ -45,6 +43,9 @@ class NoOpLogger(Logger):
   """
 
   def write(self, data: LoggingData):
+    pass
+
+  def close(self):
     pass
 
 

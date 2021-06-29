@@ -1,4 +1,3 @@
-# python3
 # Copyright 2018 DeepMind Technologies Limited. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,7 +16,7 @@
 
 import math
 import time
-from typing import Callable
+from typing import Callable, Optional, Sequence
 
 from acme.utils.loggers import base
 
@@ -52,10 +51,13 @@ class TimeFilter(base.Logger):
       to: A `Logger` object to which the current object will forward its results
         when `write` is called.
       time_delta: How often to write values out in seconds.
+        Note that writes within `time_delta` are dropped.
     """
     self._to = to
-    self._time = time.time()
+    self._time = 0
     self._time_delta = time_delta
+    if time_delta < 0:
+      raise ValueError(f'time_delta must be greater than 0 (got {time_delta}).')
 
   def write(self, values: base.LoggingData):
     now = time.time()
@@ -67,7 +69,40 @@ class TimeFilter(base.Logger):
     self._to.close()
 
 
-_GatingFn = Callable[[int], bool]
+class KeyFilter(base.Logger):
+  """Logger which filters keys in logged data."""
+
+  def __init__(
+      self,
+      to: base.Logger,
+      *,
+      keep: Optional[Sequence[str]] = None,
+      drop: Optional[Sequence[str]] = None,
+  ):
+    """Creates the filter.
+
+    Args:
+      to: A `Logger` object to which the current object will forward its writes.
+      keep: Keys that are kept by the filter. Note that `keep` and `drop` cannot
+        be both set at once.
+      drop: Keys that are dropped by the filter. Note that `keep` and `drop`
+        cannot be both set at once.
+    """
+    if bool(keep) == bool(drop):
+      raise ValueError('Exactly one of `keep` & `drop` arguments must be set.')
+    self._to = to
+    self._keep = keep
+    self._drop = drop
+
+  def write(self, data: base.LoggingData):
+    if self._keep:
+      data = {k: data[k] for k in self._keep}
+    if self._drop:
+      data = {k: v for k, v in data.items() if k not in self._drop}
+    self._to.write(data)
+
+  def close(self):
+    self._to.close()
 
 
 class GatedFilter(base.Logger):
@@ -77,7 +112,7 @@ class GatedFilter(base.Logger):
   a gating function on this number to decide when to write.
   """
 
-  def __init__(self, to: base.Logger, gating_fn: _GatingFn):
+  def __init__(self, to: base.Logger, gating_fn: Callable[[int], bool]):
     """Initialises the logger.
 
     Args:
