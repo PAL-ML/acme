@@ -17,6 +17,7 @@
 from acme.wrappers.action_repeat import ActionRepeatWrapper
 from acme.wrappers.atari_wrapper import AtariWrapper
 from acme_pal.acme.wrappers.atari_ram_wrapper import AtariRAMWrapper # Hack to resolve path issue when run in colab
+from acme_pal.acme.wrappers.precision import PrecisionWrapper
 from acme.wrappers.base import EnvironmentWrapper
 from acme.wrappers.base import wrap_all
 from acme.wrappers.canonical_spec import CanonicalSpecWrapper
