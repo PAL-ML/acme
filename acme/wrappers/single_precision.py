@@ -23,7 +23,6 @@ import dm_env
 import numpy as np
 import tree
 
-
 class SinglePrecisionWrapper(base.EnvironmentWrapper):
   """Wrapper which converts environments from double- to single-precision."""
 
@@ -52,7 +51,7 @@ class SinglePrecisionWrapper(base.EnvironmentWrapper):
     return _convert_spec(self._environment.reward_spec())
 
 
-def _convert_spec(nested_spec: types.NestedSpec) -> types.NestedSpec:
+def _convert_spec(nested_spec):
   """Convert a nested spec."""
 
   def _convert_single_spec(spec: specs.Array):
@@ -61,6 +60,8 @@ def _convert_spec(nested_spec: types.NestedSpec) -> types.NestedSpec:
       dtype = np.float32
     elif np.issubdtype(spec.dtype, np.int64):
       dtype = np.int32
+    elif np.issubdtype(spec.dtype, np.uint8):
+      dtype = np.float32
     else:
       dtype = spec.dtype
     return spec.replace(dtype=dtype)
@@ -68,7 +69,7 @@ def _convert_spec(nested_spec: types.NestedSpec) -> types.NestedSpec:
   return tree.map_structure(_convert_single_spec, nested_spec)
 
 
-def _convert_value(nested_value: types.Nest) -> types.Nest:
+def _convert_value(nested_value):
   """Convert a nested value given a desired nested spec."""
 
   def _convert_single_value(value):
@@ -77,7 +78,9 @@ def _convert_value(nested_value: types.Nest) -> types.Nest:
       if np.issubdtype(value.dtype, np.float64):
         value = np.array(value, copy=False, dtype=np.float32)
       elif np.issubdtype(value.dtype, np.int64):
-        value = np.array(value, copy=False, dtype=np.int32)
+        value = np.array(value, copy=False, dtype=np.int32) 
+      elif np.issubdtype(value.dtype, np.uint8):
+        value = np.array(value, copy=False, dtype=np.float32)
     return value
 
   return tree.map_structure(_convert_single_value, nested_value)
