@@ -8,6 +8,16 @@ from dm_env import specs
 import numpy as np
 from PIL import Image
 
+"""Standard "Nature Atari" wrapper functionality for Python environments."""
+from typing import Tuple, List, Optional, Sequence, Union
+
+from acme.wrappers import base
+from acme.wrappers import frame_stacking
+import dm_env
+from dm_env import specs
+import numpy as np
+from PIL import Image
+
 class AtariRAMWrapper(base.EnvironmentWrapper):
   """Standard "Nature Atari" wrapper for Python environments.
   This assumes that the input environment is a dm_env.Environment instance in
@@ -29,9 +39,9 @@ class AtariRAMWrapper(base.EnvironmentWrapper):
                environment: dm_env.Environment,
                *,
                max_abs_reward: Optional[float] = None,
-               action_repeats: int = 4,
-               pooled_frames: int = 2,
-               num_stacked_frames: int = 4,
+               action_repeats: int = 1, # 4
+               pooled_frames: int = 1, # 2
+               num_stacked_frames: int = 1, # 4
                max_episode_len: Optional[int] = None):
     """Initializes a new AtariWrapper.
     Args:
@@ -87,13 +97,13 @@ class AtariRAMWrapper(base.EnvironmentWrapper):
     """
     ram_dtype = np.uint8
 
-    ram_spec_shape = (128, )
+    ram_spec_shape = (128,)
     ram_spec_name = "RAM"
 
     ram_spec = specs.Array(
         shape=ram_spec_shape, dtype=ram_dtype, name=ram_spec_name)
-    ram_spec = self._frame_stacker.update_spec(ram_spec)
-
+    #ram_spec = self._frame_stacker.update_spec(ram_spec)
+    #print(ram_spec)
     return ram_spec
 
   def reset(self) -> dm_env.TimeStep:
@@ -128,6 +138,7 @@ class AtariRAMWrapper(base.EnvironmentWrapper):
     # Step on environment multiple times for each selected action.
     for _ in range(self._action_repeats):
       timestep = self._environment.step([np.array([action])])
+      #print("timestep: {}".format(timestep.observation.shape))
 
       self._episode_len += 1
       if self._episode_len == self._max_episode_len:
@@ -169,12 +180,14 @@ class AtariRAMWrapper(base.EnvironmentWrapper):
 
     observation = self._observation_from_timestep_stack(timestep_stack)
 
+    #print("observation_from_timestep_stack: {}".format(observation.shape))
+
     timestep = dm_env.TimeStep(
         step_type=step_type,
         reward=reward,
         observation=observation,
         discount=discount)
-
+    
     return self._postprocess_observation(timestep)
 
   def _observation_from_timestep_stack(self,
