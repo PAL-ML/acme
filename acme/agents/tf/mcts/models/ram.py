@@ -277,10 +277,10 @@ def support_to_scalar(logits, support_size):
     """
     # Decode to a scalar
     probabilities = tf.nn.softmax(logits, axis=1)
-    support = tf.Tensor([x for x in range(-support_size, support_size + 1)])
-    support = tf.tile(support, probabilities.shape) # probabilities.shape is probably the wrong input
-    x = tf.math.reduce_sum(support * probabilities, axis=1, keepdim=True)
-
+    support = tf.constant([x for x in range(-support_size, support_size + 1)], dtype=tf.float32)
+    support = tf.broadcast_to(support, probabilities.shape)
+    x = tf.math.reduce_sum(support * probabilities, axis=1, keepdims=True)
+    
     # Invert the scaling (defined in https://arxiv.org/abs/1805.11593)
     x = tf.math.sign(x) * (
         ((tf.math.sqrt(1 + 4 * 0.001 * (tf.math.abs(x) + 1 + 0.001)) - 1) / (2 * 0.001))
