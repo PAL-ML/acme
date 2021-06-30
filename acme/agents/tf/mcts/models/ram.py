@@ -347,6 +347,29 @@ class MuZeroDynamicsModel(base.Model):
 	def needs_reset(self) -> bool:
 		return self._needs_reset
 
+def scatter_add(tensor, indices, updates):
+    """
+
+    Args:
+        tensor: (seq_len, batch_size, vocab_size)
+        indices: (seq_len, batch_size, dim)
+        updates: (seq_len, batch_size, dim)
+
+    Returns:
+        (seq_len, batch_size, vocab_size)
+    """
+    seq_len, batch_size, dim = indices.shape
+    # Create additional indices
+    i1, i2 = tf.meshgrid(tf.range(seq_len),
+                         tf.range(batch_size), indexing="ij")
+    i1 = tf.tile(i1[:, :, tf.newaxis], [1, 1, dim])
+    i2 = tf.tile(i2[:, :, tf.newaxis], [1, 1, dim])
+    # Create final indices
+    idx = tf.stack([i1, i2, indices], axis=-1)
+    # Get scatter-added tensor
+    scatter = tf.tensor_scatter_nd_add(tensor, idx, updates)
+    return scatter
+
 def support_to_scalar(logits, support_size):
     """
     Transform a categorical representation to a scalar
@@ -366,7 +389,6 @@ def support_to_scalar(logits, support_size):
     )
     return x
 
-
 def scalar_to_support(x, support_size):
     """
     Transform a scalar to a categorical representation with (2 * support_size + 1) categories
@@ -379,14 +401,14 @@ def scalar_to_support(x, support_size):
     x = tf.clip_by_value(x, -support_size, support_size)
     floor = tf.math.floor(x)
     prob = x - floor
-    logits = tf.zeros(x.shape[0], x.shape[1], 2 * support_size + 1)
-    logits = tf.scatter_nd(
-        tf.expand_dims(floor + support_size, -1), tf.expand_dims(1 - prob, -1), shape= # shape required, account for dims=2
+    logits = np.zeros([x.shape[0], x.shape[1], 2 * support_size + 1])
+    logits = scatter_add(
+        logits, tf.cast(tf.expand_dims(floor + support_size, -1), dtype=tf.int32), tf.expand_dims(1 - prob, -1),
     )
     indexes = floor + support_size + 1
     prob = tf.where(2 * support_size < indexes, prob, 0.0)
     indexes = tf.where(2 * support_size < indexes, indexes, 0.0)
-    logits.tf.scatter_nd(
-    	tf.expand_dims(indexes.long(), -1), tf.expand_dims(prob, -1) shape= # shape required, account for dims=2
+    logits = scatter_add(
+        logits, tf.expand_dims(tf.cast(indexes, dtype=tf.int32), -1), tf.expand_dims(prob, -1)
     )
     return logits
