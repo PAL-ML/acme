@@ -29,6 +29,74 @@ from scipy import special
 import sonnet as snt
 import tensorflow as tf
 
+class RepresentationMLP(snt.Module):
+	def __init__(
+		self,
+		input_size,
+		layer_sizes,
+		output_size,
+		output_activation=tf.identity,
+		activation=tf.nn.elu,
+	):
+		super(RepresentationMLP, self).__init__(name="Muzero_representation_mlp")
+		self.sizes = [input_size] + layer_sizes + [output_size]
+		self.layers = []
+		for i in range(len(sizes)-1):
+			act = activation if i < len(sizes) - 2 else output_activation
+			layers += [snt.Linear(sizes[i], sizes[i+1]), act()]
+		self.MLP = snt.Sequential(layers)
+
+	def __call__(self, x):
+		x = self.MLP(x)
+		return x
+
+class MLPRepresentationModel(snt.Module):
+	"""This uses MLPs to encode the initial observation into a hidden state."""
+
+	def __init__(
+			self,
+			environment_spec: specs.EnvironmentSpec,
+			hidden_sizes: Tuple[int, ...],
+			representation_layers,
+			dynamics_layers,
+			reward_layers,
+			support_size,
+			stacked_observations
+	):
+		super(MLPRepresentationModel, self).__init__(name='MuZero_representation_model')
+
+		# Get num actions/observation shape.
+		self._num_actions = environment_spec.actions.num_values
+		self._input_shape = environment_spec.observations.shape
+		self._flat_shape = int(np.prod(self._input_shape))
+
+		# Prediction networks.
+		self._representation_network = RepresentationMLP(
+			self._input_shape[0]
+			* self._input_shape[1]
+			* self._input_shape[2] 
+			* (stacked_observations + 1)
+			+ stacked_observations * self._input_shape[1] * self._input_shape[2],
+			representation_layers,
+			hidden_sizes
+		)
+
+	def __call__(self, state: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor, tf.Tensor]:
+		# there will almost certainly be a dimension error lol
+		encoded_state = snt.Flatten()(state)
+		encoded_state = self._representation_network(encoded_state)
+
+		# Scale encoded state between [0, 1] (See paper appendix Training)
+        min_encoded_state = next_state.min(1, keepdim=True)[0]
+        max_encoded_state = next_state.max(1, keepdim=True)[0]
+        scale_encoded_state = max_encoded_state - min_encoded_state
+        scale_encoded_state[scale_encoded_state < 1e-5] += 1e-5
+        encoded_state_normalized = (
+            encoded_state - min_encoded_state
+        ) / scale_encoded_state
+
+		return encoded_state_normalized
+
 
 class DynamicsMLP(snt.Module):
 	def __init__(
@@ -38,8 +106,8 @@ class DynamicsMLP(snt.Module):
 		output_size,
 		output_activation=tf.identity,
 		activation=tf.nn.elu,
-	);
-		super(DynamicsMLP, self).__init__(name=name)
+	):
+		super(DynamicsMLP, self).__init__(name="MuZero_dynamics_mlp")
 		self.sizes = [input_size] + layer_sizes + [output_size]
 		self.layers = []
 		for i in range(len(sizes)-1):
@@ -112,8 +180,6 @@ class MLPDynamicsModel(snt.Module):
 
 		return next_encoded_state_normalized, reward, discount_logits
 
-
-
 class MuZeroDynamicsModel(base.Model):
 	"""MuZero's Dynamics network, based on Werner Duvaud's implementation."""
 
@@ -147,11 +213,20 @@ class MuZeroDynamicsModel(base.Model):
 			reward_layers,
 			support_size,
 		)
+		self._representation_model = MLPRepresentationModel(
+			environment_spec,
+			hidden_sizes,
+			dynamics_layers,
+			reward_layers,
+			support_size
+		)
 		self._optimizer = snt.optimizers.Adam(learning_rate)
 		self._forward = tf.function(self._transition_model)
 		tf2_utils.create_variables(
 				self._transition_model, [self._obs_spec, self._action_spec])
-		self._variables = self._transition_model.trainable_variables
+		
+		self._variables = self._transition_model.trainable_variables \
+			+ self._representation_model.trainable_variables
 
 		# Model state.
 		self._needs_reset = True
@@ -212,7 +287,9 @@ class MuZeroDynamicsModel(base.Model):
 			raise ValueError('Model must be reset with an initial state.')
 		# We reset to an initial state that we are explicitly given.
 		# This allows us to handle environments with stochastic resets (e.g. Catch).
-		self._state = initial_state.copy()
+		
+		# will this work or fail the type checking? that'll need more work
+		self._state = self._representation_model(initial_state)
 		self._needs_reset = False
 		return dm_env.restart(self._state)
 
