@@ -101,7 +101,7 @@ class R2D2(agent.Agent):
         prefetch_size=prefetch_size)
 
     target_network = copy.deepcopy(network)
-    tf2_utils.create_variables(network, [environment_spec])
+    tf2_utils.create_variables(network, [environment_spec.observations])
     tf2_utils.create_variables(target_network, [environment_spec.observations])
 
     learner = learning.R2D2Learner(
