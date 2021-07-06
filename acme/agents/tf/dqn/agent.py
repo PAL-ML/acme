@@ -161,7 +161,7 @@ class DQN(agent.Agent):
           directory=checkpoint_subpath,
           objects_to_save=learner.state,
           subdirectory='dqn_learner',
-          time_delta_minutes=0.5)
+          time_delta_minutes=0)
     else:
       self._checkpointer = None
 
