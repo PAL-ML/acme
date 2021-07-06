@@ -174,5 +174,5 @@ class DQN(agent.Agent):
   def update(self):
     super().update()
     if self._checkpointer is not None:
-      logging.info('Saving checkpoint')
+      print('Saving checkpoint')
       self._checkpointer.save(force=True)
