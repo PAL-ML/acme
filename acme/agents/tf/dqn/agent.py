@@ -31,7 +31,6 @@ import reverb
 import sonnet as snt
 import tensorflow as tf
 import trfl
-from absl import logging
 
 
 class DQN(agent.Agent):
@@ -175,5 +174,4 @@ class DQN(agent.Agent):
   def update(self):
     super().update()
     if self._checkpointer is not None:
-      print('Saving checkpoint')
       self._checkpointer.save(force=True)
