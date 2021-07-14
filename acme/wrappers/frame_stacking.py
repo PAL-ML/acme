@@ -83,6 +83,6 @@ class FrameStacker:
     return np.stack(self._stack, axis=-1)
 
   def update_spec(self, spec: dm_env_specs.Array) -> dm_env_specs.Array:
-    return dm_env_specs.Array(shape=spec.shape + (self._num_frames,),
+    return dm_env_specs.Array(shape=(self._num_frames,) + spec.shape ,
                               dtype=spec.dtype,
                               name=spec.name)
