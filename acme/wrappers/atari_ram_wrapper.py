@@ -97,13 +97,14 @@ class AtariRAMWrapper(base.EnvironmentWrapper):
     """
     ram_dtype = np.uint8
 
-    ram_spec_shape = (128,)
+    ram_spec_shape = (4,128)
     ram_spec_name = "RAM"
 
     ram_spec = specs.Array(
         shape=ram_spec_shape, dtype=ram_dtype, name=ram_spec_name)
     # ram_spec = self._frame_stacker.update_spec(ram_spec)
     print(ram_spec)
+    print(ram_spec.shape)
     return ram_spec
 
   def reset(self) -> dm_env.TimeStep:
