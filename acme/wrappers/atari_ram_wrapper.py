@@ -202,13 +202,16 @@ class AtariRAMWrapper(base.EnvironmentWrapper):
                                        timestep_stack: List[dm_env.TimeStep]):
     """Compute the observation for a stack of timesteps."""
     # We use last timestep for lives only.
+    tempArray = []
+    for s in timestep_stack:
+      tempArray.append(s.observation)
     observation = timestep_stack[-1].observation
-    pooled_obs = np.max(
-        np.stack([
+    pooled_obs = np.stack([
             s.observation
             for s in timestep_stack[-self._pooled_frames:]
-        ]),
-        axis=0)
+        ])
+
+    # pooled_obs = np.sta
 
     print("pooled: {}".format(pooled_obs.shape))
 
