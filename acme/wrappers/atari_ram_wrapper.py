@@ -208,9 +208,9 @@ class AtariRAMWrapper(base.EnvironmentWrapper):
         ]),
         axis=0)
 
-    processed_pixels = self._postprocess_ram(pooled_obs)
+    # processed_pixels = self._postprocess_ram(pooled_obs)
     
-    return processed_pixels
+    return pooled_obs
 
   def _postprocess_ram(self, raw_pixels: np.ndarray):
     """Grayscale, cast and normalize the pooled pixel observations."""
