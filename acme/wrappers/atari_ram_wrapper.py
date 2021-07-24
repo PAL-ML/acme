@@ -186,7 +186,7 @@ class AtariRAMWrapper(base.EnvironmentWrapper):
 
     observation = self._observation_from_timestep_stack(timestep_stack)
 
-    #print("observation_from_timestep_stack: {}".format(observation.shape))
+    print("observation_from_timestep_stack: {}".format(observation.shape))
 
     timestep = dm_env.TimeStep(
         step_type=step_type,
@@ -208,6 +208,8 @@ class AtariRAMWrapper(base.EnvironmentWrapper):
         ]),
         axis=0)
 
+    print("pooled: {}".format(pooled_obs.shape))
+
     # processed_pixels = self._postprocess_ram(pooled_obs)
     
     return pooled_obs
@@ -219,7 +221,7 @@ class AtariRAMWrapper(base.EnvironmentWrapper):
     # This is useful for e.g. making videos.
 
     processed_pixels = raw_pixels
-
+    processed_pixels = processed_pixels.astype(np.uint8, copy=False)
     cast_observation = processed_pixels
 
     stacked_observation = self._frame_stacker.step(cast_observation)
