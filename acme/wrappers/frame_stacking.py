@@ -80,7 +80,7 @@ class FrameStacker:
       # Fill stack with blank frames if empty.
       self._stack.extend([np.zeros_like(frame)] * (self._num_frames - 1))
     self._stack.append(frame)
-    return np.stack(self._stack, axis=-1)
+    return np.stack(self._stack, axis=1)
 
   def update_spec(self, spec: dm_env_specs.Array) -> dm_env_specs.Array:
     return dm_env_specs.Array(shape=(self._num_frames,) + spec.shape ,
