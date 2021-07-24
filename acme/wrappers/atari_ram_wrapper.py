@@ -208,7 +208,7 @@ class AtariRAMWrapper(base.EnvironmentWrapper):
         ]),
         axis=0)
 
-    processed_pixels = self._postprocess_pixels(pooled_obs)
+    processed_pixels = self._postprocess_ram(pooled_obs)
     
     return processed_pixels
 
