@@ -184,7 +184,7 @@ class AtariRAMWrapper(base.EnvironmentWrapper):
     discount = np.product(
         [timestep_t.discount for timestep_t in timestep_stack])
 
-    print("timestep_stack: {}".format(timestep_stack.shape))
+    print("timestep_stack: {}".format(len(timestep_stack)))
 
     observation = self._observation_from_timestep_stack(timestep_stack)
 
