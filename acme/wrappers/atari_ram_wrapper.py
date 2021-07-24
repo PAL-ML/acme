@@ -74,6 +74,7 @@ class AtariRAMWrapper(base.EnvironmentWrapper):
     self._action_repeats = action_repeats
     self._pooled_frames = pooled_frames
     self._max_abs_reward = max_abs_reward or np.inf
+    self._num_stacked_frames = num_stacked_frames
 
     spec = environment.observation_spec()
 
@@ -97,7 +98,11 @@ class AtariRAMWrapper(base.EnvironmentWrapper):
     """
     ram_dtype = np.uint8
 
-    ram_spec_shape = (4,128)
+    if self._num_stacked_frames == 1:
+      ram_spec_shape = (128,)
+    else:
+      ram_spec_shape = (self._num_stacked_frames,128)
+    
     ram_spec_name = "RAM"
 
     ram_spec = specs.Array(
@@ -202,8 +207,24 @@ class AtariRAMWrapper(base.EnvironmentWrapper):
             for s in timestep_stack[-self._pooled_frames:]
         ]),
         axis=0)
+
+    processed_pixels = self._postprocess_pixels(pooled_obs)
     
-    return pooled_obs
+    return processed_pixels
+
+  def _postprocess_ram(self, raw_pixels: np.ndarray):
+    """Grayscale, cast and normalize the pooled pixel observations."""
+
+    # Cache the raw i.e. un-(stacked|pooled|grayscaled|downscaled) observation.
+    # This is useful for e.g. making videos.
+
+    processed_pixels = raw_pixels
+
+    cast_observation = processed_pixels
+
+    stacked_observation = self._frame_stacker.step(cast_observation)
+
+    return stacked_observation
 
   def _postprocess_observation(self,
                                timestep: dm_env.TimeStep) -> dm_env.TimeStep:
