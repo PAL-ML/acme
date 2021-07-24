@@ -184,11 +184,11 @@ class AtariRAMWrapper(base.EnvironmentWrapper):
     discount = np.product(
         [timestep_t.discount for timestep_t in timestep_stack])
 
-    print("timestep_stack: {}".format(timestep_stack))
+    # print("timestep_stack: {}".format(timestep_stack))
 
     observation = self._observation_from_timestep_stack(timestep_stack)
 
-    print("observation_from_timestep_stack: {}".format(observation.shape))
+    # print("observation_from_timestep_stack: {}".format(observation.shape))
 
     timestep = dm_env.TimeStep(
         step_type=step_type,
@@ -217,10 +217,6 @@ class AtariRAMWrapper(base.EnvironmentWrapper):
       for s in timestep_stack:
         tempArray.append(s.observation)
       pooled_obs = np.stack(tempArray)
-
-    print("pooled: {}".format(pooled_obs.shape))
-
-    # processed_pixels = self._postprocess_ram(pooled_obs)
     
     return pooled_obs
 
