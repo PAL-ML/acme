@@ -172,8 +172,6 @@ class ReverbAdder(base.Adder):
           extras: types.NestedArray = ()):
     """Record an action and the following timestep."""
 
-    print("testing : ",action)
-
     if not self._add_first_called:
       raise ValueError('adder.add_first must be called before adder.add.')
 

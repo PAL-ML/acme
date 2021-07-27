@@ -122,7 +122,7 @@ class AtariRAMWrapper(base.EnvironmentWrapper):
     timestep_stack.append(timestep)
     # print("timestep : ",timestep)
     for _ in range(self._action_repeats - 1):
-      timestep = self._environment.step([np.array([0])])
+      timestep = self._environment.step([np.array(0)])
       #print("timestep: {}".format(timestep.observation.shape))
 
       self._episode_len += 1
