@@ -117,13 +117,46 @@ class AtariRAMWrapper(base.EnvironmentWrapper):
     self._reset_next_step = False
     self._episode_len = 0
     self._frame_stacker.reset()
+    timestep_stack = []
     timestep = self._environment.reset()
+    timestep_stack.append(timestep)
     print("timestep : ",timestep)
+    for _ in range(self._action_repeats - 1):
+      timestep = self._environment.step([np.array([action])])
+      #print("timestep: {}".format(timestep.observation.shape))
 
-    observation = self._observation_on_reset(timestep)
+      self._episode_len += 1
+      if self._episode_len == self._max_episode_len:
+        timestep = timestep._replace(step_type=dm_env.StepType.LAST)
 
-    return self._postprocess_observation(
-        timestep._replace(observation=observation))
+      timestep_stack.append(timestep)
+
+      if timestep.last():
+        # Action repeat frames should not span episode boundaries. Also, no need
+        # to pad with zero-valued observations as all the reductions in
+        # _postprocess_observation work gracefully for any non-zero size of
+        # timestep_stack.
+        self._reset_next_step = True
+        break
+
+    step_type = dm_env.StepType.MID
+    for timestep in timestep_stack:
+      if timestep.first():
+        step_type = dm_env.StepType.FIRST
+        break
+      elif timestep.last():
+        step_type = dm_env.StepType.LAST
+        break
+
+    observation = self._observation_from_timestep_stack(timestep_stack)
+
+    timestep = dm_env.TimeStep(
+        step_type=step_type,
+        reward=reward,
+        observation=observation,
+        discount=discount)
+    
+    return self._postprocess_observation(timestep)
 
   def _observation_on_reset(self, timestep: dm_env.TimeStep):
     """Computes the current observation after a reset.
