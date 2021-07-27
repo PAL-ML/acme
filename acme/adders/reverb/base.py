@@ -191,7 +191,7 @@ class ReverbAdder(base.Adder):
         dict(
             observation=next_timestep.observation,
             start_of_episode=next_timestep.first()),
-        partial_step=True)
+        partial_step=False)
     self._write()
 
     if next_timestep.last():

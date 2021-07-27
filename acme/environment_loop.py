@@ -93,7 +93,6 @@ class EnvironmentLoop(core.Worker):
       # Generate an action from the agent's policy and step the environment.
       action = self._actor.select_action(timestep.observation)
       timestep = self._environment.step(action)
-      print("yoyo",action)
 
       # Have the agent observe the timestep and let the actor update itself.
       self._actor.observe(action[0], next_timestep=timestep)
