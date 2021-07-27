@@ -108,8 +108,8 @@ class AtariRAMWrapper(base.EnvironmentWrapper):
     ram_spec = specs.Array(
         shape=ram_spec_shape, dtype=ram_dtype, name=ram_spec_name)
     # ram_spec = self._frame_stacker.update_spec(ram_spec)
-    print(ram_spec)
-    print(ram_spec.shape)
+    # print(ram_spec)
+    # print(ram_spec.shape)
     return ram_spec
 
   def reset(self) -> dm_env.TimeStep:
@@ -120,7 +120,7 @@ class AtariRAMWrapper(base.EnvironmentWrapper):
     timestep_stack = []
     timestep = self._environment.reset()
     timestep_stack.append(timestep)
-    print("timestep : ",timestep)
+    # print("timestep : ",timestep)
     for _ in range(self._action_repeats - 1):
       timestep = self._environment.step([np.array([0])])
       #print("timestep: {}".format(timestep.observation.shape))
