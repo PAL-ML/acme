@@ -118,6 +118,7 @@ class AtariRAMWrapper(base.EnvironmentWrapper):
     self._episode_len = 0
     self._frame_stacker.reset()
     timestep = self._environment.reset()
+    print("timestep : ",timestep)
 
     observation = self._observation_on_reset(timestep)
 
