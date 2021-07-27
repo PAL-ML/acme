@@ -148,12 +148,24 @@ class AtariRAMWrapper(base.EnvironmentWrapper):
         step_type = dm_env.StepType.LAST
         break
 
+    if timestep_stack[0].first():
+          # Update first timestep to have identity effect on reward and discount.
+      timestep_stack[0] = timestep_stack[0]._replace(reward=0., discount=1.)
+
+    # Sum reward over stack.
+    reward = sum(timestep_t.reward for timestep_t in timestep_stack)
+
+    # Multiply discount over stack (will either be 0. or 1.).
+    discount = np.product(
+        [timestep_t.discount for timestep_t in timestep_stack])
+
     observation = self._observation_from_timestep_stack(timestep_stack)
 
     timestep = dm_env.TimeStep(
         step_type=step_type,
+        reward=reward,
         observation=observation,
-        )
+        discount=discount)
     
     return self._postprocess_observation(timestep)
 
