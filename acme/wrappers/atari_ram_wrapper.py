@@ -122,7 +122,7 @@ class AtariRAMWrapper(base.EnvironmentWrapper):
     timestep_stack.append(timestep)
     print("timestep : ",timestep)
     for _ in range(self._action_repeats - 1):
-      timestep = self._environment.step([np.array([action])])
+      timestep = self._environment.step([np.array([0])])
       #print("timestep: {}".format(timestep.observation.shape))
 
       self._episode_len += 1
@@ -152,9 +152,8 @@ class AtariRAMWrapper(base.EnvironmentWrapper):
 
     timestep = dm_env.TimeStep(
         step_type=step_type,
-        reward=reward,
         observation=observation,
-        discount=discount)
+        )
     
     return self._postprocess_observation(timestep)
 
