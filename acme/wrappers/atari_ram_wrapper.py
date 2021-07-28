@@ -138,15 +138,7 @@ class AtariRAMWrapper(base.EnvironmentWrapper):
         # timestep_stack.
         self._reset_next_step = True
         break
-
-    step_type = dm_env.StepType.MID
-    for timestep in timestep_stack:
-      if timestep.first():
-        step_type = dm_env.StepType.FIRST
-        break
-      elif timestep.last():
-        step_type = dm_env.StepType.LAST
-        break
+    step_type = dm_env.StepType.FIRST
 
     if timestep_stack[0].first():
           # Update first timestep to have identity effect on reward and discount.
