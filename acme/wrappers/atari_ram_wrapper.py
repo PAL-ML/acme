@@ -263,7 +263,7 @@ class AtariRAMWrapper(base.EnvironmentWrapper):
         tempArray.append(s.observation)
       
       if len(tempArray) < self._num_stacked_frames : 
-        for i in range (self._num_stacked_frames - len(pooled_obs)):
+        for i in range (self._num_stacked_frames - len(tempArray)):
           tempArray.append(buckets = [0] * 128)
       pooled_obs = np.stack(tempArray)
     
