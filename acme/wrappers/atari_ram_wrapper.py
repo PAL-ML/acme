@@ -122,7 +122,7 @@ class AtariRAMWrapper(base.EnvironmentWrapper):
     timestep_stack.append(timestep)
     # print("timestep : ",timestep)
     for _ in range(self._action_repeats - 1):
-      timestep = self._environment.step([np.array(0)])
+      timestep = self._environment.step([np.array([0])])
       #print("timestep: {}".format(timestep.observation.shape))
 
       self._episode_len += 1
@@ -138,7 +138,15 @@ class AtariRAMWrapper(base.EnvironmentWrapper):
         # timestep_stack.
         self._reset_next_step = True
         break
-    step_type = dm_env.StepType.FIRST
+
+    step_type = dm_env.StepType.MID
+    for timestep in timestep_stack:
+      if timestep.first():
+        step_type = dm_env.StepType.FIRST
+        break
+      elif timestep.last():
+        step_type = dm_env.StepType.LAST
+        break
 
     if timestep_stack[0].first():
           # Update first timestep to have identity effect on reward and discount.
