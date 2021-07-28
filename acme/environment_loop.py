@@ -95,7 +95,7 @@ class EnvironmentLoop(core.Worker):
       timestep = self._environment.step(action)
 
       # Have the agent observe the timestep and let the actor update itself.
-      self._actor.observe(action[0], next_timestep=timestep)
+      self._actor.observe(action, next_timestep=timestep)
       if self._should_update:
         self._actor.update()
 
