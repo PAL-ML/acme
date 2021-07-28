@@ -13,22 +13,47 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""RL agent Builder interface."""
+"""New version of the RL agent Builder interface (with LearnerCore)."""
 
 import abc
-from typing import Any, Generic, Iterator, List, Optional
+from typing import Callable, Generic, Iterator, List, Optional
 
 from acme import adders
 from acme import core
 from acme import specs
+from acme.agents.jax import builders
+from acme.jax import learner_core
+from acme.jax import learning
 from acme.jax import networks as networks_lib
-from acme.jax.types import Networks, PolicyNetwork, Sample  # pylint: disable=g-multiple-import
+from acme.jax.types import Networks, PolicyNetwork, Sample, TrainingState  # pylint: disable=g-multiple-import
 from acme.utils import counting
+from acme.utils import loggers
+import dataclasses
 import reverb
 
+# Note: we cannot just use GenericMeta, because it doesn't exist in Python 3.7.
+_LearnerBuilderMeta = type(builders.GenericActorLearnerBuilder)
 
-class GenericActorLearnerBuilder(abc.ABC, Generic[Networks, PolicyNetwork,
-                                                  Sample]):
+
+# TODO(b/192806089): migrate all builders to use the learner core, remove
+# all base Builder classes except for GenericActorLearnerCoreBuilder and
+# remove this meta.
+class _LearnerCoreBuilderMeta(_LearnerBuilderMeta):
+  """Metaclass that prevents subclasses from overriding make_learner."""
+
+  def __init__(cls, class_name, bases, dct, **kwargs):  # pylint: disable=no-self-argument
+    if (class_name != 'GenericActorLearnerCoreBuilder' and
+        'make_learner' in dct):
+      raise AssertionError('`make_learner` is final and cannot be overridden. '
+                           '`make_learner_core` should be used instead.')
+    _LearnerBuilderMeta.__init__(cls, class_name, bases, dct, **kwargs)  # pytype: disable=invalid-typevar
+
+
+@dataclasses.dataclass
+class GenericActorLearnerCoreBuilder(
+    builders.GenericActorLearnerBuilder[Networks, PolicyNetwork, Sample],
+    Generic[Networks, PolicyNetwork, Sample, TrainingState],
+    metaclass=_LearnerCoreBuilderMeta):
   """Defines an interface for defining the components of an RL agent.
 
   Implementations of this interface contain a complete specification of a
@@ -36,6 +61,8 @@ class GenericActorLearnerBuilder(abc.ABC, Generic[Networks, PolicyNetwork,
   RL agent which interacts with the environment either locally or in a
   distributed setup.
   """
+
+  logger_fn: Callable[[], loggers.Logger] = lambda: None
 
   @abc.abstractmethod
   def make_replay_tables(
@@ -81,6 +108,17 @@ class GenericActorLearnerBuilder(abc.ABC, Generic[Networks, PolicyNetwork,
     """
 
   @abc.abstractmethod
+  def make_learner_core(
+      self,
+      networks: Networks) -> learner_core.LearnerCore[Sample, TrainingState]:
+    """Creates the learner core.
+
+    Args:
+      networks: struct describing the networks needed by the learner; this can
+        be specific to the learner in question.
+    """
+
+  # @final
   def make_learner(
       self,
       random_key: networks_lib.PRNGKey,
@@ -93,6 +131,12 @@ class GenericActorLearnerBuilder(abc.ABC, Generic[Networks, PolicyNetwork,
   ) -> core.Learner:
     """Creates an instance of the learner.
 
+    NOTE: make_learner is not part of this interface and is defined here only to
+    ensure compatibility with the old builder interface to enable incremental
+    transition.
+    Subclasses cannot override this method.
+    make_learner_core should be overridden instead.
+
     Args:
       random_key: A key for random number generation.
       networks: struct describing the networks needed by the learner; this can
@@ -103,9 +147,9 @@ class GenericActorLearnerBuilder(abc.ABC, Generic[Networks, PolicyNetwork,
       counter: a Counter which allows for recording of counts (learner steps,
         actor steps, etc.) distributed throughout the agent.
       checkpoint: bool controlling whether the learner checkpoints itself.
+    Returns:
+      The learner instance.
     """
-
-
-class ActorLearnerBuilder(GenericActorLearnerBuilder[Any, Any,
-                                                     reverb.ReplaySample]):
-  pass
+    return learning.DefaultJaxLearner(
+        self.make_learner_core(networks), dataset, random_key, counter,
+        self.logger_fn())

@@ -108,8 +108,8 @@ class AtariRAMWrapper(base.EnvironmentWrapper):
     ram_spec = specs.Array(
         shape=ram_spec_shape, dtype=ram_dtype, name=ram_spec_name)
     # ram_spec = self._frame_stacker.update_spec(ram_spec)
-    print(ram_spec)
-    print(ram_spec.shape)
+    # print(ram_spec)
+    # print(ram_spec.shape)
     return ram_spec
 
   def reset(self) -> dm_env.TimeStep:
@@ -117,12 +117,57 @@ class AtariRAMWrapper(base.EnvironmentWrapper):
     self._reset_next_step = False
     self._episode_len = 0
     self._frame_stacker.reset()
+    timestep_stack = []
     timestep = self._environment.reset()
+    timestep_stack.append(timestep)
+    # print("timestep : ",timestep)
+    for _ in range(self._action_repeats - 1):
+      timestep = self._environment.step([np.array([0])])
+      #print("timestep: {}".format(timestep.observation.shape))
 
-    observation = self._observation_on_reset(timestep)
+      self._episode_len += 1
+      if self._episode_len == self._max_episode_len:
+        timestep = timestep._replace(step_type=dm_env.StepType.LAST)
 
-    return self._postprocess_observation(
-        timestep._replace(observation=observation))
+      timestep_stack.append(timestep)
+
+      if timestep.last():
+        # Action repeat frames should not span episode boundaries. Also, no need
+        # to pad with zero-valued observations as all the reductions in
+        # _postprocess_observation work gracefully for any non-zero size of
+        # timestep_stack.
+        self._reset_next_step = True
+        break
+
+    step_type = dm_env.StepType.MID
+    for timestep in timestep_stack:
+      if timestep.first():
+        step_type = dm_env.StepType.FIRST
+        break
+      elif timestep.last():
+        step_type = dm_env.StepType.LAST
+        break
+
+    if timestep_stack[0].first():
+          # Update first timestep to have identity effect on reward and discount.
+      timestep_stack[0] = timestep_stack[0]._replace(reward=0., discount=1.)
+
+    # Sum reward over stack.
+    reward = sum(timestep_t.reward for timestep_t in timestep_stack)
+
+    # Multiply discount over stack (will either be 0. or 1.).
+    discount = np.product(
+        [timestep_t.discount for timestep_t in timestep_stack])
+
+    observation = self._observation_from_timestep_stack(timestep_stack)
+
+    timestep = dm_env.TimeStep(
+        step_type=step_type,
+        reward=reward,
+        observation=observation,
+        discount=discount)
+    
+    return self._postprocess_observation(timestep)
 
   def _observation_on_reset(self, timestep: dm_env.TimeStep):
     """Computes the current observation after a reset.
